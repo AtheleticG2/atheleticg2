@@ -1,4 +1,4 @@
 # video json
 *.mp4
 *.json
-data/
+# data/
