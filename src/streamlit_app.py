@@ -33,41 +33,61 @@ sport = st.sidebar.selectbox(
 st.write("**You selected:**", sport)
 uploaded_file = st.sidebar.file_uploader("**Choose a video...**", type=["mp4", "avi", "mov"], on_change=st.session_state.clear)
 
+if 'is_playing' not in st.session_state:
+    st.session_state.is_playing = False
+if 'current_frame' not in st.session_state:
+    st.session_state.current_frame = 0
+
+# Play video function with play/pause functionality and frame tracking
 def play_video(results):
-    frame = 0
-    for result in results:
+    while st.session_state.current_frame < len(results) and st.session_state.is_playing:
+        result = results[st.session_state.current_frame]
         annotated_frame = result.plot()
-        time.sleep(0.02)
-        frame+=1
-        image_placeholder.image(annotated_frame, channels="BGR", caption=f"Frame {frame}")
+        image_placeholder.image(annotated_frame, channels="BGR", caption=f"Frame {st.session_state.current_frame + 1}")
+        time.sleep(0.02)  # Adjust for smoother playback if necessary
+        st.session_state.current_frame += 1
 
-
+# Load and display the uploaded video
 if uploaded_file is not None:
-    # Save uploaded video to a temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
         temp_video.write(uploaded_file.read())
         temp_video_path = temp_video.name
 
-    st.video(temp_video_path)  # Display the original uploaded video
+    st.video(temp_video_path)  # Display the uploaded video
 
     if "results" not in st.session_state:
         st.write("Processing video...")
         model = YOLO('src/yolo11m-pose.pt')
-        st.session_state.results = model.track(source=temp_video_path) 
-
+        st.session_state.results = model.track(source=temp_video_path)
     else:
         st.write("Using cached results...")
 
-    # Use the cached results for displaying or replaying
     results = st.session_state.results
 
     image_placeholder = st.empty()
-    button_placeholder = st.empty()
-    
-    play_btn = button_placeholder.button("Play")
-    
-    if play_btn:
+
+    # Play and Pause buttons
+    option_map = {
+        0: ":material/play_circle:",
+        1: ":material/pause_circle:"
+    }
+    selection = st.pills(
+        "Controls",
+        options=option_map.keys(),
+        format_func=lambda option: option_map[option],
+        selection_mode="single",
+        label_visibility='visible'
+    )
+    # Handle play/pause button clicks
+    if selection == 0:
+        st.session_state.is_playing = True
         play_video(results)
+    if selection == 1:
+        st.session_state.is_playing = False
+
+    # Reset frame position if video ends
+    if st.session_state.current_frame >= len(results):
+        st.session_state.current_frame = 0
 
     if sport == "Sprint Starting Technique":
         st.write("Evaluating sprint starting technique...")
@@ -90,7 +110,7 @@ if uploaded_file is not None:
                                 "Criteria": st.column_config.TextColumn(width='large'),
                                 "Score": st.column_config.NumberColumn(
                                     format="%d ⭐")})
-        st.write(eval_frames)
+        
         
     elif sport == "Long Jump":
         st.write("Evaluating long jump technique...")
@@ -113,7 +133,7 @@ if uploaded_file is not None:
                                 "Criteria": st.column_config.TextColumn(width='large'),
                                 "Score": st.column_config.NumberColumn(
                                     format="%d ⭐")})
-        st.write(eval_frames)
+        
     
     
     os.remove(temp_video_path)
