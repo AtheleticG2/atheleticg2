@@ -21,10 +21,22 @@ import shutil
 import pandas as pd
 
 # Streamlit App
+st.set_page_config("Athelete Assist", layout="wide")
+
+# with open( "./src/style.css" ) as css:
+#     st.markdown( f'<style>{css.read()}</style>' , unsafe_allow_html= True)
+
 st.title("Athlete Assist")
+# st.markdown("""
+# <style>
+# @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
 
-
-# Sport Selection
+# body {
+#     font-family: 'Your Font Name', sans-serif;
+# }
+# </style>
+# """, unsafe_allow_html=True)
+# # Sport Selection
 sport = st.sidebar.selectbox(
     "**Which sport would you like to analyze?**",
     ("Sprint Starting Technique", "Sprint Running Technique", "Long Jump", "High Jump"),
@@ -39,7 +51,7 @@ if 'current_frame' not in st.session_state:
     st.session_state.current_frame = 0
 
 # Play video function with play/pause functionality and frame tracking
-def play_video(results):
+def play_video(results, image_placeholder):
     while st.session_state.current_frame < len(results) and st.session_state.is_playing:
         result = results[st.session_state.current_frame]
         annotated_frame = result.plot()
@@ -76,12 +88,12 @@ if uploaded_file is not None:
         options=option_map.keys(),
         format_func=lambda option: option_map[option],
         selection_mode="single",
-        label_visibility='visible'
+        label_visibility='hidden'
     )
     # Handle play/pause button clicks
     if selection == 0:
         st.session_state.is_playing = True
-        play_video(results)
+        play_video(results, image_placeholder=image_placeholder)
     if selection == 1:
         st.session_state.is_playing = False
 
@@ -90,7 +102,7 @@ if uploaded_file is not None:
         st.session_state.current_frame = 0
 
     if sport == "Sprint Starting Technique":
-        st.write("Evaluating sprint starting technique...")
+        # st.write("Evaluating sprint starting technique...")
         player = st.number_input("Enter the player ID", min_value=0, max_value=100, value=0)
         player_coords = get_player_coords(player, results)  
         scoring, eval_frames = evaluate_sprint_start(player_coords=player_coords)
@@ -101,7 +113,7 @@ if uploaded_file is not None:
                                     format="%d ⭐")})
     
     elif sport == "Sprint Running Technique":
-        st.write("Evaluating sprint running technique...")
+        # st.write("Evaluating sprint running technique...")
         player = st.number_input("Enter the player ID", min_value=0, max_value=100, value=0)
         player_coords = get_player_coords(player, results)  
         scoring, eval_frames = evaluate_sprint_running(player_coords=player_coords)
@@ -113,7 +125,7 @@ if uploaded_file is not None:
         
         
     elif sport == "Long Jump":
-        st.write("Evaluating long jump technique...")
+        # st.write("Evaluating long jump technique...")
         player = st.number_input("Enter the player ID", min_value=0, max_value=100, value=0)
         player_coords = get_player_coords(player, results, True, True) # include boxes
         scoring, eval_frames = evaluate_long_jump(player_coords=player_coords)
@@ -124,7 +136,7 @@ if uploaded_file is not None:
                                     format="%d ⭐")})
     
     elif sport == "High Jump":
-        st.write("Evaluating high jump technique...")
+        # st.write("Evaluating high jump technique...")
         player = st.number_input("Enter the player ID", min_value=0, max_value=100, value=0)
         player_coords = get_player_coords(player, results, True, True) # include boxes
         scoring, eval_frames = evaluate_high_jump(player_coords=player_coords)
@@ -137,4 +149,3 @@ if uploaded_file is not None:
     
     
     os.remove(temp_video_path)
-
