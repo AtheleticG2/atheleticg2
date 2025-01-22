@@ -21,28 +21,33 @@ import shutil
 import pandas as pd
 
 # Streamlit App
-st.set_page_config("Athelete Assist", layout="wide")
-
-# with open( "./src/style.css" ) as css:
-#     st.markdown( f'<style>{css.read()}</style>' , unsafe_allow_html= True)
+st.set_page_config("Athelete Assist", layout="centered")
 
 st.title("Athlete Assist")
-# st.markdown("""
-# <style>
-# @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
 
-# body {
-#     font-family: 'Your Font Name', sans-serif;
-# }
-# </style>
-# """, unsafe_allow_html=True)
+st.markdown("""
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Geist', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Geist', sans-serif;
+        }
+        html, div, span, p, a, li, ul, button {
+        font-family: 'Geist', sans-serif !important;
+        }
+
+    </style>
+""", unsafe_allow_html=True)
+
 # # Sport Selection
 sport = st.sidebar.selectbox(
     "**Which sport would you like to analyze?**",
     ("Sprint Starting Technique", "Sprint Running Technique", "Long Jump", "High Jump"),
 )
 
-st.write("**You selected:**", sport)
+st.write(f"**You selected:** {sport}")
 uploaded_file = st.sidebar.file_uploader("**Choose a video...**", type=["mp4", "avi", "mov"], on_change=st.session_state.clear)
 
 if 'is_playing' not in st.session_state:
@@ -76,7 +81,7 @@ if uploaded_file is not None:
 
     results = st.session_state.results
 
-    image_placeholder = st.empty()
+    image_placeholder = st.empcaty()
 
     # Play and Pause buttons
     option_map = {
