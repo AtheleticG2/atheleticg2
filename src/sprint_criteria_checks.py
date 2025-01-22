@@ -84,9 +84,12 @@ def runs_on_balls_of_feet(ankle_positions, hip_positions, ankle_hip_ratio_thresh
     return False
 
 def evaluate_sprint_running(player_coords):
-    scoring = {'Knees are high': 0, 'Walks on the ball of the foot': 0, 'Arms are at a 90° angle and move actively': 0,
-               'Body center of gravity tends forward': 0}
-
+    scoring = {
+        'Knees are lifted high': 0,
+        'Runs on balls of feet': 0,
+        'Arms at a 90º angle': 0,
+        'Center of gravity leans forward': 0
+    }
     # Initialize lists to track knee angles over time
     left_knee_angles = []
     right_knee_angles = []
@@ -128,7 +131,7 @@ def evaluate_sprint_running(player_coords):
         # Criterion 1: Knees are high (knee lifted relative to hip)
         if sprint_running_crit_1(left_hip, left_knee, left_ankle) or \
            sprint_running_crit_1(right_hip, right_knee, right_ankle):
-            scoring['knees_are_high'] = 1
+            scoring['Knees are lifted high'] = 1
             evaluation_frames[1].append(frame)
 
 
@@ -140,7 +143,7 @@ def evaluate_sprint_running(player_coords):
         # Criterion 2: Runs on balls of feet
         if runs_on_balls_of_feet(left_ankle_positions, left_hip_positions) or \
            runs_on_balls_of_feet(right_ankle_positions, right_hip_positions):
-            scoring['runs_on_balls_of_feet'] = 1
+            scoring['Runs on balls of feet'] = 1
             evaluation_frames[2].append(frame)
 
 
@@ -149,7 +152,7 @@ def evaluate_sprint_running(player_coords):
         right_arm_angle = calculate_angle(right_shoulder, right_elbow, right_wrist)
 
         if 80 <= left_arm_angle <= 100 and 80 <= right_arm_angle <= 100:
-            scoring['arms_at_90_degrees'] = 1
+            scoring['Arms at a 90º angle'] = 1
             evaluation_frames[3].append(frame)
 
         # Criterion 4: Center of gravity leans forward - check if hips lean more forward compared to the feet
@@ -157,7 +160,7 @@ def evaluate_sprint_running(player_coords):
         mid_ankle = get_midpoint(left_ankle, right_ankle)
 
         if mid_hip[1] < mid_ankle[1]:
-            scoring['center_of_gravity_forward'] = 1
+            scoring['Center of gravity leans forward'] = 1
             evaluation_frames[4].append(frame)
 
     return scoring, evaluation_frames
@@ -200,9 +203,13 @@ def sprint_start_crit_5(left_knee_angles, right_knee_angles, extended_threshold=
 
 
 def evaluate_sprint_start(player_coords):
-    scoring = {'When “ready”, the pelvis is slightly higher than the shoulders': 0, 'When “ready”, the head is in line with the torso and looking towards the starting line': 0,
-               'At “start”, both adjectives are pushed off forcefully. There is a loss of balance towards the front': 0, 'Gaze is directed obliquely forward towards the ground in extension of the torso during first steps': 0,
-               'First step with full extension of the back leg': 0}
+    scoring = {
+        'Pelvis slightly higher than shoulders': 0, 
+        'Head in line with torso': 0,
+        'Legs push off forcefully': 0, 
+        'Gaze directed towards the ground': 0,
+        'Back leg fully extended': 0
+    }
 
     # Initialize lists to track knee angles over time
     left_knee_angles = []
@@ -234,13 +241,13 @@ def evaluate_sprint_start(player_coords):
 
         # Criterion 1: pelvis slightly higher than the shoulders
         if mid_hip[1] < mid_shoulder[1]:
-            scoring['pelvis_higher_than_shoulders'] = 1
+            scoring['Pelvis slightly higher than shoulders'] = 1
             evaluation_frames[1].append(frame)
 
         # Criterion 2: Head aligned with torso
         body_tilt_angle = calculate_angle(mid_hip, mid_ear, mid_shoulder)
         if 0 <= body_tilt_angle <= 4:
-            scoring['head_aligned_with_torso'] = 1
+            scoring['Head in line with torso'] = 1
             evaluation_frames[2].append(frame)
 
 
@@ -254,12 +261,12 @@ def evaluate_sprint_start(player_coords):
 
         # Check if legs push off powerfully
         if sprint_start_crit_3(left_knee_angles) and sprint_start_crit_3(right_knee_angles):
-            scoring['legs_push_off_powerfully'] = 1
+            scoring['Legs push off forcefully'] = 1
             evaluation_frames[3].append(frame)
 
         # Criterion 4: One leg extended, the other contracted i.e. full extension of the back leg
         if sprint_start_crit_5(left_knee_angles, right_knee_angles):
-            scoring['back_leg_full_extension'] = 1
+            scoring['Back leg fully extended'] = 1
             evaluation_frames[5].append(frame)
 
 

@@ -37,6 +37,10 @@ st.markdown("""
         html, div, span, p, a, li, ul {
             font-family: 'Geist', sans-serif !important;
         }
+        .streamlit-table th, .streamlit-table td {
+            white-space: normal;
+            word-wrap: break-word;
+        }
 
     </style>
 """, unsafe_allow_html=True)
