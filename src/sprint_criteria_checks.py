@@ -84,8 +84,8 @@ def runs_on_balls_of_feet(ankle_positions, hip_positions, ankle_hip_ratio_thresh
     return False
 
 def evaluate_sprint_running(player_coords):
-    scoring = {'knees_are_high': 0, 'runs_on_balls_of_feet': 0, 'arms_at_90_degrees': 0,
-               'center_of_gravity_forward': 0}
+    scoring = {'Knees are high': 0, 'Walks on the ball of the foot': 0, 'Arms are at a 90° angle and move actively': 0,
+               'Body center of gravity tends forward': 0}
 
     # Initialize lists to track knee angles over time
     left_knee_angles = []
@@ -200,9 +200,9 @@ def sprint_start_crit_5(left_knee_angles, right_knee_angles, extended_threshold=
 
 
 def evaluate_sprint_start(player_coords):
-    scoring = {'pelvis_higher_than_shoulders': 0, 'head_aligned_with_torso': 0,
-               'legs_push_off_powerfully': 0, 'gaze_directed_downwards': 0,
-               'back_leg_full_extension': 0}
+    scoring = {'When “ready”, the pelvis is slightly higher than the shoulders': 0, 'When “ready”, the head is in line with the torso and looking towards the starting line': 0,
+               'At “start”, both adjectives are pushed off forcefully. There is a loss of balance towards the front': 0, 'Gaze is directed obliquely forward towards the ground in extension of the torso during first steps': 0,
+               'First step with full extension of the back leg': 0}
 
     # Initialize lists to track knee angles over time
     left_knee_angles = []
