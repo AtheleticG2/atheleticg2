@@ -1,6 +1,6 @@
 import numpy as np
 
-# Function to calculate angles between three points
+# Function to calculate angles between three points (same as before)
 
 
 def calculate_angle(a, b, c):
@@ -10,145 +10,185 @@ def calculate_angle(a, b, c):
     angle = np.abs(radians * 180.0 / np.pi)
     return angle if angle <= 180 else 360 - angle
 
+# Function to retrieve a keypoint (same as before)
 
-# Function to retrieve a keypoint
+
 def get_keypoint(keypoints, keypoint_index):
     try:
         return keypoints[keypoint_index].tolist()
     except (IndexError, AttributeError):
         return None
 
-# Function to calculate the midpoint between two points
+# Function to calculate the midpoint between two points (same as before)
 
 
 def get_midpoint(point1, point2):
     return [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2]
 
-
-def javelin_draw_backward(arm_angle, threshold=90):
-    """
-    Check if the javelin arm is drawn back to an optimal angle.
-    """
-    if arm_angle > threshold:
-        return True
-    return False
+# Function to calculate the distance between two points (same as before)
 
 
-def pelvis_rotation_inward(hip_angle, threshold=15):
-    """
-    Check if the pelvis rotates inward during the throwing motion.
-    """
-    if hip_angle < threshold:
-        return True
-    return False
+def calculate_distance(point1, point2):
+    return np.linalg.norm(np.array(point1) - np.array(point2))
+
+# Function to check if the javelin is drawn backward during the last 5 strides
 
 
-def execute_impulse_step(ankle_angle, knee_angle, threshold=45):
-    """
-    Check if the impulse step is executed with appropriate angles.
-    """
-    if ankle_angle > threshold and knee_angle > threshold:
-        return True
-    return False
+def javelin_drawn_backward(shoulder_positions, wrist_positions, last_n_frames=5):
+    if len(shoulder_positions) < last_n_frames or len(wrist_positions) < last_n_frames:
+        return False
+
+    # Check if the wrist moves backward relative to the shoulder over the last N frames
+    wrist_movement = wrist_positions[-1][0] - \
+        wrist_positions[-last_n_frames][0]
+    shoulder_movement = shoulder_positions[-1][0] - \
+        shoulder_positions[-last_n_frames][0]
+
+    return wrist_movement < shoulder_movement
+
+# Function to check pelvis rotation and javelin fully drawn back
 
 
-def execute_blocking_step(hip_angle, knee_angle, threshold=60):
-    """
-    Check if the blocking step is executed based on hip and knee angle criteria.
-    """
-    if hip_angle > threshold and knee_angle > threshold:
-        return True
-    return False
+def pelvis_rotation_and_javelin_drawn(hip_positions, shoulder_positions, wrist_positions):
+    if len(hip_positions) < 2 or len(shoulder_positions) < 2 or len(wrist_positions) < 2:
+        return False
+
+    # Check if the pelvis rotates inward (hips move closer to the midline)
+    hip_movement = hip_positions[-1][0] - hip_positions[-2][0]
+    shoulder_movement = shoulder_positions[-1][0] - shoulder_positions[-2][0]
+
+    # Check if the wrist is fully drawn back (behind the shoulder)
+    wrist_behind_shoulder = wrist_positions[-1][0] < shoulder_positions[-1][0]
+
+    return hip_movement < shoulder_movement and wrist_behind_shoulder
+
+# Function to check the execution of the impulse step
 
 
-def initiate_throw_through_hips(pelvis_angle, torso_angle, threshold=30):
-    """
-    Ensure that the throw is initiated through the hips and torso after the blocking step.
-    """
-    if pelvis_angle > threshold and torso_angle < 60:
-        return True
-    return False
+def impulse_step_executed(ankle_positions, knee_positions, hip_positions):
+    if len(ankle_positions) < 2 or len(knee_positions) < 2 or len(hip_positions) < 2:
+        return False
+
+    # Check if the ankle moves forward relative to the knee and hip
+    ankle_movement = ankle_positions[-1][0] - ankle_positions[-2][0]
+    knee_movement = knee_positions[-1][0] - knee_positions[-2][0]
+    hip_movement = hip_positions[-1][0] - hip_positions[-2][0]
+
+    return ankle_movement > knee_movement and ankle_movement > hip_movement
+
+# Function to check the execution of the blocking step
 
 
-def last_5_strides(foot_position, stride_threshold=5):
-    """
-    Check if the player is in the last 5 strides before the impulse step.
-    """
-    stride_count = len(foot_position)
-    if stride_count >= stride_threshold:
-        # Check if foot position shows backward movement for last 5 steps
-        recent_strides = foot_position[-stride_threshold:]
-        if all(recent_strides[i][1] > recent_strides[i+1][1] for i in range(stride_threshold-1)):
-            return True
-    return False
+def blocking_step_executed(foot_positions, hip_positions):
+    if len(foot_positions) < 2 or len(hip_positions) < 2:
+        return False
+
+    # Check if the foot stops moving forward while the hips continue to rotate
+    foot_movement = foot_positions[-1][0] - foot_positions[-2][0]
+    hip_movement = hip_positions[-1][0] - hip_positions[-2][0]
+
+    return abs(foot_movement) < 0.1 and abs(hip_movement) > 0.1
+
+# Function to check the initiation of the throw through hips and torso
+
+
+def throw_initiated(hip_positions, shoulder_positions, wrist_positions):
+    if len(hip_positions) < 2 or len(shoulder_positions) < 2 or len(wrist_positions) < 2:
+        return False
+
+    # Check if the hips and torso rotate forward while the wrist moves forward
+    hip_movement = hip_positions[-1][0] - hip_positions[-2][0]
+    shoulder_movement = shoulder_positions[-1][0] - shoulder_positions[-2][0]
+    wrist_movement = wrist_positions[-1][0] - wrist_positions[-2][0]
+
+    return hip_movement > 0 and shoulder_movement > 0 and wrist_movement > 0
+
+# Main evaluation function for javelin throw
 
 
 def evaluate_javelin_throw(player_coords):
-    scoring = {'pelvis_rotation_inward': 0, 'impulse_step_executed': 0,
-               'blocking_step_executed': 0, 'throw_initiated_through_hips': 0, 'last_5_strides': 0}
+    scoring = {
+        'javelin_drawn_backward': 0,
+        'pelvis_rotation_and_javelin_drawn': 0,
+        'impulse_step_executed': 0,
+        'blocking_step_executed': 0,
+        'throw_initiated': 0
+    }
 
-    # Initialize lists for angle tracking
-    pelvis_angles = []
-    ankle_angles = []
-    knee_angles = []
-    foot_positions = []  # To track foot positions for last strides
+    evaluation_frames = {1: [], 2: [], 3: [], 4: [], 5: []}
 
-    evaluation_frames = {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}
+    # Initialize lists to track positions over time
+    shoulder_positions = []
+    wrist_positions = []
+    hip_positions = []
+    knee_positions = []
+    ankle_positions = []
+    foot_positions = []
 
     for data in player_coords:
         frame = data['frame']
         keypoints = data['keypoints']
+
+        # Get relevant keypoints
+        left_shoulder = get_keypoint(keypoints, 5)
+        right_shoulder = get_keypoint(keypoints, 6)
+        left_wrist = get_keypoint(keypoints, 9)
+        right_wrist = get_keypoint(keypoints, 10)
         left_hip = get_keypoint(keypoints, 11)
         right_hip = get_keypoint(keypoints, 12)
         left_knee = get_keypoint(keypoints, 13)
-        left_ankle = get_keypoint(keypoints, 15)
         right_knee = get_keypoint(keypoints, 14)
+        left_ankle = get_keypoint(keypoints, 15)
         right_ankle = get_keypoint(keypoints, 16)
-
-        if not (left_hip and right_hip and left_knee and left_ankle and right_knee and right_ankle):
-            continue
-
-        # Track foot positions for stride calculation
-        # Example index, change based on actual keypoints
         left_foot = get_keypoint(keypoints, 17)
-        # Example index, change based on actual keypoints
         right_foot = get_keypoint(keypoints, 18)
 
-        if left_foot and right_foot:
-            foot_positions.append([frame, left_foot, right_foot])
+        # Use midpoints for shoulders, hips, knees, ankles, and feet
+        mid_shoulder = get_midpoint(
+            left_shoulder, right_shoulder) if left_shoulder and right_shoulder else None
+        mid_wrist = get_midpoint(
+            left_wrist, right_wrist) if left_wrist and right_wrist else None
+        mid_hip = get_midpoint(
+            left_hip, right_hip) if left_hip and right_hip else None
+        mid_knee = get_midpoint(
+            left_knee, right_knee) if left_knee and right_knee else None
+        mid_ankle = get_midpoint(
+            left_ankle, right_ankle) if left_ankle and right_ankle else None
+        mid_foot = get_midpoint(
+            left_foot, right_foot) if left_foot and right_foot else None
 
-        # Calculate relevant angles
-        pelvis_angle = calculate_angle(left_hip, left_knee, left_ankle)
-        ankle_angle = calculate_angle(left_ankle, left_knee, left_hip)
-        knee_angle = calculate_angle(left_knee, left_hip, right_hip)
+        # Append positions to lists if all required keypoints are available
+        if mid_shoulder and mid_wrist and mid_hip and mid_knee and mid_ankle and mid_foot:
+            shoulder_positions.append(mid_shoulder)
+            wrist_positions.append(mid_wrist)
+            hip_positions.append(mid_hip)
+            knee_positions.append(mid_knee)
+            ankle_positions.append(mid_ankle)
+            foot_positions.append(mid_foot)
 
-        pelvis_angles.append(pelvis_angle)
-        ankle_angles.append(ankle_angle)
-        knee_angles.append(knee_angle)
+            # Criterion 1: Javelin drawn backward during the last 5 strides
+            if javelin_drawn_backward(shoulder_positions, wrist_positions):
+                scoring['javelin_drawn_backward'] = 1
+                evaluation_frames[1].append(frame)
 
-        # Criterion 1: Pelvis rotates inward
-        if pelvis_rotation_inward(pelvis_angle):
-            scoring['pelvis_rotation_inward'] = 1
-            evaluation_frames[1].append(frame)
+            # Criterion 2: Pelvis rotates inward, and javelin is fully drawn back
+            if pelvis_rotation_and_javelin_drawn(hip_positions, shoulder_positions, wrist_positions):
+                scoring['pelvis_rotation_and_javelin_drawn'] = 1
+                evaluation_frames[2].append(frame)
 
-        # Criterion 2: Impulse step execution
-        if execute_impulse_step(ankle_angle, knee_angle):
-            scoring['impulse_step_executed'] = 1
-            evaluation_frames[2].append(frame)
+            # Criterion 3: Execution of the impulse step
+            if impulse_step_executed(ankle_positions, knee_positions, hip_positions):
+                scoring['impulse_step_executed'] = 1
+                evaluation_frames[3].append(frame)
 
-        # Criterion 3: Blocking step execution
-        if execute_blocking_step(pelvis_angle, knee_angle):
-            scoring['blocking_step_executed'] = 1
-            evaluation_frames[3].append(frame)
+            # Criterion 4: Execution of the blocking step
+            if blocking_step_executed(foot_positions, hip_positions):
+                scoring['blocking_step_executed'] = 1
+                evaluation_frames[4].append(frame)
 
-        # Criterion 4: Throw initiated through hips
-        if initiate_throw_through_hips(pelvis_angle, knee_angle):
-            scoring['throw_initiated_through_hips'] = 1
-            evaluation_frames[4].append(frame)
-
-        # Criterion 5: Last 5 strides check
-        if last_5_strides(foot_positions):
-            scoring['last_5_strides'] = 1
-            evaluation_frames[5].append(frame)
+            # Criterion 5: Throw initiated through hips and torso
+            if throw_initiated(hip_positions, shoulder_positions, wrist_positions):
+                scoring['throw_initiated'] = 1
+                evaluation_frames[5].append(frame)
 
     return scoring, evaluation_frames
