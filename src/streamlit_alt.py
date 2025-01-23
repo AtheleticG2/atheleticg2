@@ -132,7 +132,8 @@ if "results" in st.session_state:
     
     
     with results_col2:
-        st.dataframe(scoring_df, column_config={
+        st.data_editor(scoring_df,
+                      column_config={
             "Criteria": st.column_config.TextColumn(width='large'),
             "Score": st.column_config.NumberColumn(format="%d ⭐")
         }, use_container_width=True)
