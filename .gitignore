@@ -2,3 +2,5 @@
 *.mp4
 *.json
 # data/
+
+*.pyc
