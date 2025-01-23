@@ -7,18 +7,12 @@ import streamlit as st
 import tempfile
 import os
 import time
-
+import pandas as pd
+import subprocess
 from sprint_criteria_checks import evaluate_sprint_running, evaluate_sprint_start, get_player_coords
 from longjump_criteria_checks import evaluate_long_jump
 from highjump_criteria_checks import evaluate_high_jump
 
-import streamlit as st
-import tempfile
-import cv2
-from ultralytics import YOLO
-import os
-import shutil
-import pandas as pd
 
 # Streamlit App
 st.set_page_config("Athelete Assist", layout="wide")
@@ -85,18 +79,25 @@ if uploaded_file is not None:
     output_video_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
     st.session_state.output_video_path = output_video_path
 
-    fourcc = cv2.VideoWriter_fourcc(*"avc1")
     fps = 30
-
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # Codec for H.264 (via libx264)
+    
     first_frame = st.session_state.results[0].plot()
     frame_height, frame_width, _ = first_frame.shape
     frame_size = (frame_width, frame_height)
 
     out = cv2.VideoWriter(output_video_path, fourcc, fps, frame_size)
+    if not out.isOpened():
+        raise RuntimeError("Failed to initialize VideoWriter. Check codec compatibility.")
     for result in st.session_state.results:
         annotated_frame = result.plot()
         out.write(annotated_frame)
     out.release()
+
+    # Encode the result to H264 using ffmpeg
+    convertedVideo = "./testh264.mp4"
+    subprocess.call(f"ffmpeg -y -i {output_video_path} -c:v libx264 {convertedVideo}".split(" "))
+
 
     # Display the uploaded video
     with vid_col1:
@@ -104,7 +105,7 @@ if uploaded_file is not None:
 
     # Display processed video
     with vid_col2:
-        st.video(st.session_state.output_video_path)
+        st.video(convertedVideo, format="video/mp4")
 
 # Process results based on selected sport
 if "results" in st.session_state:
@@ -137,3 +138,4 @@ if "results" in st.session_state:
             "Criteria": st.column_config.TextColumn(width='large'),
             "Score": st.column_config.NumberColumn(format="%d ⭐")
         }, use_container_width=True)
+
