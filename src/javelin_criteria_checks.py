@@ -19,13 +19,13 @@ def get_keypoint(keypoints, keypoint_index):
     except (IndexError, AttributeError):
         return None
 
-# Function to calculate the midpoint between two points (same as before)
+# Function to calculate the midpoint between two points
 
 
 def get_midpoint(point1, point2):
     return [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2]
 
-# Function to calculate the distance between two points (same as before)
+# Function to calculate the distance between two points
 
 
 def calculate_distance(point1, point2):
