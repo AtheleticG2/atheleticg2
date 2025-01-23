@@ -1,6 +1,0 @@
-inference-sdk
-mediapipe
-opencv-python
-numpy
-matplotlib
-ultralytics
