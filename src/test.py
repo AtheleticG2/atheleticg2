@@ -33,7 +33,7 @@ def evaluate_discus_throw(player_coords):
         'jump_turn_initiated': 0,
         'jump_turn_center_circle': 0,
         'throw_off_low_to_high': 0,
-        'discus_release_via_wrist': 0
+        'discus_leaves_index_finger': 0
     }
     eval_frames = {1: [], 2: [], 3: [], 4: [], 5: []}
 
@@ -104,30 +104,29 @@ def evaluate_discus_throw(player_coords):
                 print(f"[DEBUG Frame {frame}] Criterion 3 failed: mid_ankle_x={mid_ankle_x}")
 
 
-        # Criterion 4: Throw-off is done from low to high and starts from active hip engagement and an open foot stance
-        if right_hip and right_knee and right_ankle:
-            throw_angle = compute_angle_3pts(right_knee, right_hip, left_knee)
-            if throw_angle is None:
-                print(f"[DEBUG Frame {frame}] Missing keypoints for throw_angle calculation.")
+        # Criterion 4: Throw-off low to high
+        if throw_angle is not None:
+            print(f"[DEBUG Frame {frame}] Evaluating Criterion 4: throw_angle={throw_angle}")
+            if 120 <= throw_angle <= 150:
+                print(f"[DEBUG Frame {frame}] Criterion 4 satisfied: throw_angle={throw_angle}")
+                scoring['throw_off_low_to_high'] = 1
+                eval_frames[4].append(frame)
             else:
-                print(f"[DEBUG Frame {frame}] throw_angle={throw_angle}")
-                if throw_angle > 45:  # Adjusted threshold for low to high throw-off
-                    scoring['throw_off_low_to_high'] = 1
-                    eval_frames[4].append(frame)
-                else:
-                    print(f"[DEBUG Frame {frame}] Criterion 4 failed: throw_angle={throw_angle}")
+                print(f"[DEBUG Frame {frame}] Criterion 4 failed: throw_angle={throw_angle} not in range 120-150")
+        else:
+            print(f"[DEBUG Frame {frame}] Criterion 4 skipped: throw_angle is None")
 
-        # Criterion 5: Discus leaves via wrist position
-        if right_shoulder and right_wrist:
-            release_angle = compute_angle_3pts(right_shoulder, right_wrist, (right_wrist[0] + 1, right_wrist[1]))  # Assuming the direction of throw is along the x-axis
-            if release_angle is None:
-                print(f"[DEBUG Frame {frame}] Missing keypoints for release_angle calculation.")
+
+        # Criterion 5: Discus leaves via index finger
+        if release_angle is not None:
+            print(f"[DEBUG Frame {frame}] Evaluating Criterion 5: release_angle={release_angle}")
+            if release_angle > 150:
+                print(f"[DEBUG Frame {frame}] Criterion 5 satisfied: release_angle={release_angle}")
+                scoring['discus_leaves_index_finger'] = 1
+                eval_frames[5].append(frame)
             else:
-                print(f"[DEBUG Frame {frame}] release_angle={release_angle}")
-                if release_angle > 30:  # Adjusted threshold for discus release
-                    scoring['discus_release_via_wrist'] = 1
-                    eval_frames[5].append(frame)
-                else:
-                    print(f"[DEBUG Frame {frame}] Criterion 5 failed: release_angle={release_angle}")
+                print(f"[DEBUG Frame {frame}] Criterion 5 failed: release_angle={release_angle}")
+        else:
+            print(f"[DEBUG Frame {frame}] Criterion 5 skipped: release_angle is None")
 
     return scoring, eval_frames

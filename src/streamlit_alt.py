@@ -11,6 +11,8 @@ import time
 from sprint_criteria_checks import evaluate_sprint_running, evaluate_sprint_start, get_player_coords
 from longjump_criteria_checks import evaluate_long_jump
 from highjump_criteria_checks import evaluate_high_jump
+from shortput_criteria_checks import evaluate_shot_put
+from discusthrow_criteria_check import evaluate_discus_throw
 
 import streamlit as st
 import tempfile
@@ -44,7 +46,7 @@ st.markdown("""
 # # Sport Selection
 sport = st.sidebar.selectbox(
     "**Which sport would you like to analyze?**",
-    ("Sprint Starting Technique", "Sprint Running Technique", "Long Jump", "High Jump"),
+    ("Sprint Starting Technique", "Sprint Running Technique", "Long Jump", "High Jump", "Shot Put", "Discus Throw"),
 )
 
 st.write(f"**You selected:** {sport}")
@@ -121,6 +123,12 @@ if "results" in st.session_state:
     elif sport == "High Jump":
         player_coords = get_player_coords(player, results, True, True)
         scoring, eval_frames = evaluate_high_jump(player_coords=player_coords)
+    elif sport == "Shot Put":
+        player_coords = get_player_coords(player, results, True, True)
+        scoring, eval_frames = evaluate_shot_put(player_coords=player_coords)
+    elif sport == "Discus Throw":
+        player_coords = get_player_coords(player, results, True, True)
+        scoring, eval_frames = evaluate_discus_throw(player_coords=player_coords)
 
     # Display scoring
     scoring_df = pd.DataFrame(list(scoring.items()), columns=['Criteria', 'Score'])

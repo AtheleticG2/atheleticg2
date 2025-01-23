@@ -83,7 +83,7 @@ if uploaded_file is not None:
 
     results = st.session_state.results
 
-    image_placeholder = st.empcaty()
+    image_placeholder = st.empty()
 
     # Play and Pause buttons
     option_map = {
@@ -167,7 +167,7 @@ if uploaded_file is not None:
         )
     
     elif sport == "Discus Throw":
-        st.write("Evaluating shot put technique...")
+        st.write("Evaluating Discus Throw technique...")
         player = st.number_input("Enter the player ID", min_value=0, max_value=100, value=0)
         player_coords = get_player_coords(player, results, True, True)
         scoring, eval_frames = evaluate_discus_throw(player_coords=player_coords)
