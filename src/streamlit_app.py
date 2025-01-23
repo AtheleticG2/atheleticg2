@@ -13,7 +13,7 @@ from longjump_criteria_checks import evaluate_long_jump
 from highjump_criteria_checks import evaluate_high_jump
 # Import the javelin evaluation function
 from javelin_criteria_checks import evaluate_javelin_throw
-
+from hurdling_criteria_checks import evaluate_hurdling
 import streamlit as st
 import tempfile
 import cv2
@@ -31,7 +31,7 @@ st.title("Athlete Assist")
 sport = st.sidebar.selectbox(
     "**Which sport would you like to analyze?**",
     ("Sprint Starting Technique", "Sprint Running Technique",
-     "Long Jump", "High Jump", "Javelin Throw"),  # Added Javelin Throw
+     "Long Jump", "High Jump", "Javelin Throw", "Hurdling"),  # Added Javelin Throw
 )
 
 st.write("**You selected:**", sport)
@@ -179,6 +179,19 @@ if uploaded_file is not None:
         player_coords = get_player_coords(player, results)
         scoring, eval_frames = evaluate_javelin_throw(
             player_coords=player_coords)
+        scoring_df = pd.DataFrame(
+            list(scoring.items()), columns=['Criteria', 'Score'])
+        st.data_editor(scoring_df, column_config={
+            "Criteria": st.column_config.TextColumn(width='large'),
+            "Score": st.column_config.NumberColumn(
+                format="%d ⭐")})
+
+    elif sport == "Hurdling":
+        player = st.number_input(
+            "Enter the player ID", min_value=0, max_value=100, value=0)
+        player_coords = get_player_coords(
+            player, results, True, True)  # include boxes
+        scoring, eval_frames = evaluate_hurdling(player_coords=player_coords)
         scoring_df = pd.DataFrame(
             list(scoring.items()), columns=['Criteria', 'Score'])
         st.data_editor(scoring_df, column_config={
