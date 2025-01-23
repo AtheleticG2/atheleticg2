@@ -1,6 +1,6 @@
 import numpy as np
 
-# Function to calculate angles between three points (same as before)
+# Function to calculate angles between three points
 
 
 def calculate_angle(a, b, c):
@@ -10,8 +10,6 @@ def calculate_angle(a, b, c):
     angle = np.abs(radians * 180.0 / np.pi)
     return angle if angle <= 180 else 360 - angle
 
-# Function to retrieve a keypoint (same as before)
-
 
 def get_keypoint(keypoints, keypoint_index):
     try:
@@ -19,91 +17,90 @@ def get_keypoint(keypoints, keypoint_index):
     except (IndexError, AttributeError):
         return None
 
-# Function to calculate the midpoint between two points
 
-
-def get_midpoint(point1, point2):
-    return [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2]
-
-# Function to calculate the distance between two points
-
-
-def calculate_distance(point1, point2):
-    return np.linalg.norm(np.array(point1) - np.array(point2))
-
-# Function to check if the javelin is drawn backward during the last 5 strides
-
-
-def javelin_drawn_backward(shoulder_positions, wrist_positions, last_n_frames=5):
+def javelin_drawn_backward(shoulder_positions, wrist_positions, side, last_n_frames=5):
     if len(shoulder_positions) < last_n_frames or len(wrist_positions) < last_n_frames:
+        print(
+            f"javelin_drawn_backward ({side}): Insufficient data. Shoulder: {len(shoulder_positions)}, Wrist: {len(wrist_positions)}")
         return False
 
-    # Check if the wrist moves backward relative to the shoulder over the last N frames
     wrist_movement = wrist_positions[-1][0] - \
         wrist_positions[-last_n_frames][0]
     shoulder_movement = shoulder_positions[-1][0] - \
         shoulder_positions[-last_n_frames][0]
 
-    return wrist_movement < shoulder_movement
+    if wrist_movement >= shoulder_movement:
+        print(
+            f"javelin_drawn_backward ({side}): Wrist movement ({wrist_movement}) >= shoulder ({shoulder_movement})")
+        return False
+    return True
 
-# Function to check pelvis rotation and javelin fully drawn back
 
-
-def pelvis_rotation_and_javelin_drawn(hip_positions, shoulder_positions, wrist_positions):
+def pelvis_rotation_and_javelin_drawn(hip_positions, shoulder_positions, wrist_positions, side):
     if len(hip_positions) < 2 or len(shoulder_positions) < 2 or len(wrist_positions) < 2:
+        print(
+            f"pelvis_rotation ({side}): Insufficient data. Hip: {len(hip_positions)}, Shoulder: {len(shoulder_positions)}, Wrist: {len(wrist_positions)}")
         return False
 
-    # Check if the pelvis rotates inward (hips move closer to the midline)
     hip_movement = hip_positions[-1][0] - hip_positions[-2][0]
     shoulder_movement = shoulder_positions[-1][0] - shoulder_positions[-2][0]
+    wrist_behind = wrist_positions[-1][0] < shoulder_positions[-1][0]
 
-    # Check if the wrist is fully drawn back (behind the shoulder)
-    wrist_behind_shoulder = wrist_positions[-1][0] < shoulder_positions[-1][0]
+    if not (hip_movement < shoulder_movement and wrist_behind):
+        print(
+            f"pelvis_rotation ({side}): Hip move ({hip_movement}) >= shoulder ({shoulder_movement}) or wrist not behind")
+        return False
+    return True
 
-    return hip_movement < shoulder_movement and wrist_behind_shoulder
 
-# Function to check the execution of the impulse step
-
-
-def impulse_step_executed(ankle_positions, knee_positions, hip_positions):
+def impulse_step_executed(ankle_positions, knee_positions, hip_positions, side):
     if len(ankle_positions) < 2 or len(knee_positions) < 2 or len(hip_positions) < 2:
+        print(
+            f"impulse_step ({side}): Insufficient data. Ankle: {len(ankle_positions)}, Knee: {len(knee_positions)}, Hip: {len(hip_positions)}")
         return False
 
-    # Check if the ankle moves forward relative to the knee and hip
-    ankle_movement = ankle_positions[-1][0] - ankle_positions[-2][0]
-    knee_movement = knee_positions[-1][0] - knee_positions[-2][0]
-    hip_movement = hip_positions[-1][0] - hip_positions[-2][0]
+    ankle_move = ankle_positions[-1][0] - ankle_positions[-2][0]
+    knee_move = knee_positions[-1][0] - knee_positions[-2][0]
+    hip_move = hip_positions[-1][0] - hip_positions[-2][0]
 
-    return ankle_movement > knee_movement and ankle_movement > hip_movement
+    if not (ankle_move > knee_move and ankle_move > hip_move):
+        print(
+            f"impulse_step ({side}): Ankle ({ankle_move}) <= knee ({knee_move}) or hip ({hip_move})")
+        return False
+    return True
 
-# Function to check the execution of the blocking step
 
-
-def blocking_step_executed(foot_positions, hip_positions):
-    if len(foot_positions) < 2 or len(hip_positions) < 2:
+def blocking_step_executed(ankle_positions, hip_positions, side):
+    if len(ankle_positions) < 2 or len(hip_positions) < 2:
+        print(
+            f"blocking_step ({side}): Insufficient data. Ankle: {len(ankle_positions)}, Hip: {len(hip_positions)}")
         return False
 
-    # Check if the foot stops moving forward while the hips continue to rotate
-    foot_movement = foot_positions[-1][0] - foot_positions[-2][0]
-    hip_movement = hip_positions[-1][0] - hip_positions[-2][0]
+    ankle_move = abs(ankle_positions[-1][0] - ankle_positions[-2][0])
+    hip_move = abs(hip_positions[-1][0] - hip_positions[-2][0])
 
-    return abs(foot_movement) < 0.1 and abs(hip_movement) > 0.1
+    if not (ankle_move < 0.1 and hip_move > 0.1):
+        print(
+            f"blocking_step ({side}): Ankle move ({ankle_move}) >= 0.1 or hip move ({hip_move}) <= 0.1")
+        return False
+    return True
 
-# Function to check the initiation of the throw through hips and torso
 
-
-def throw_initiated(hip_positions, shoulder_positions, wrist_positions):
+def throw_initiated(hip_positions, shoulder_positions, wrist_positions, side):
     if len(hip_positions) < 2 or len(shoulder_positions) < 2 or len(wrist_positions) < 2:
+        print(
+            f"throw_initiated ({side}): Insufficient data. Hip: {len(hip_positions)}, Shoulder: {len(shoulder_positions)}, Wrist: {len(wrist_positions)}")
         return False
 
-    # Check if the hips and torso rotate forward while the wrist moves forward
-    hip_movement = hip_positions[-1][0] - hip_positions[-2][0]
-    shoulder_movement = shoulder_positions[-1][0] - shoulder_positions[-2][0]
-    wrist_movement = wrist_positions[-1][0] - wrist_positions[-2][0]
+    hip_move = hip_positions[-1][0] - hip_positions[-2][0]
+    shoulder_move = shoulder_positions[-1][0] - shoulder_positions[-2][0]
+    wrist_move = wrist_positions[-1][0] - wrist_positions[-2][0]
 
-    return hip_movement > 0 and shoulder_movement > 0 and wrist_movement > 0
-
-# Main evaluation function for javelin throw
+    if not (hip_move > 0 and shoulder_move > 0 and wrist_move > 0):
+        print(
+            f"throw_initiated ({side}): Hip ({hip_move}), shoulder ({shoulder_move}), or wrist ({wrist_move}) <= 0")
+        return False
+    return True
 
 
 def evaluate_javelin_throw(player_coords):
@@ -117,78 +114,91 @@ def evaluate_javelin_throw(player_coords):
 
     evaluation_frames = {1: [], 2: [], 3: [], 4: [], 5: []}
 
-    # Initialize lists to track positions over time
-    shoulder_positions = []
-    wrist_positions = []
-    hip_positions = []
-    knee_positions = []
-    ankle_positions = []
-    foot_positions = []
+    # Initialize trackers for COCO keypoints (indices 0-16 only)
+    left_shoulder, right_shoulder = [], []
+    left_wrist, right_wrist = [], []
+    left_hip, right_hip = [], []
+    left_knee, right_knee = [], []
+    left_ankle, right_ankle = [], []
 
     for data in player_coords:
         frame = data['frame']
         keypoints = data['keypoints']
 
-        # Get relevant keypoints
-        left_shoulder = get_keypoint(keypoints, 5)
-        right_shoulder = get_keypoint(keypoints, 6)
-        left_wrist = get_keypoint(keypoints, 9)
-        right_wrist = get_keypoint(keypoints, 10)
-        left_hip = get_keypoint(keypoints, 11)
-        right_hip = get_keypoint(keypoints, 12)
-        left_knee = get_keypoint(keypoints, 13)
-        right_knee = get_keypoint(keypoints, 14)
-        left_ankle = get_keypoint(keypoints, 15)
-        right_ankle = get_keypoint(keypoints, 16)
-        left_foot = get_keypoint(keypoints, 17)
-        right_foot = get_keypoint(keypoints, 18)
+        # Get COCO-compliant keypoints
+        ls = get_keypoint(keypoints, 5)   # left_shoulder
+        rs = get_keypoint(keypoints, 6)   # right_shoulder
+        lw = get_keypoint(keypoints, 9)   # left_wrist
+        rw = get_keypoint(keypoints, 10)  # right_wrist
+        lh = get_keypoint(keypoints, 11)  # left_hip
+        rh = get_keypoint(keypoints, 12)  # right_hip
+        lk = get_keypoint(keypoints, 13)  # left_knee
+        rk = get_keypoint(keypoints, 14)  # right_knee
+        la = get_keypoint(keypoints, 15)  # left_ankle
+        ra = get_keypoint(keypoints, 16)  # right_ankle
 
-        # Use midpoints for shoulders, hips, knees, ankles, and feet
-        mid_shoulder = get_midpoint(
-            left_shoulder, right_shoulder) if left_shoulder and right_shoulder else None
-        mid_wrist = get_midpoint(
-            left_wrist, right_wrist) if left_wrist and right_wrist else None
-        mid_hip = get_midpoint(
-            left_hip, right_hip) if left_hip and right_hip else None
-        mid_knee = get_midpoint(
-            left_knee, right_knee) if left_knee and right_knee else None
-        mid_ankle = get_midpoint(
-            left_ankle, right_ankle) if left_ankle and right_ankle else None
-        mid_foot = get_midpoint(
-            left_foot, right_foot) if left_foot and right_foot else None
+        # Update trackers
+        if ls:
+            left_shoulder.append(ls)
+        if rs:
+            right_shoulder.append(rs)
+        if lw:
+            left_wrist.append(lw)
+        if rw:
+            right_wrist.append(rw)
+        if lh:
+            left_hip.append(lh)
+        if rh:
+            right_hip.append(rh)
+        if lk:
+            left_knee.append(lk)
+        if rk:
+            right_knee.append(rk)
+        if la:
+            left_ankle.append(la)
+        if ra:
+            right_ankle.append(ra)
 
-        # Append positions to lists if all required keypoints are available
-        if mid_shoulder and mid_wrist and mid_hip and mid_knee and mid_ankle and mid_foot:
-            shoulder_positions.append(mid_shoulder)
-            wrist_positions.append(mid_wrist)
-            hip_positions.append(mid_hip)
-            knee_positions.append(mid_knee)
-            ankle_positions.append(mid_ankle)
-            foot_positions.append(mid_foot)
+        # Criterion 1: Javelin drawn backward
+        crit1_left = javelin_drawn_backward(left_shoulder, left_wrist, 'left')
+        crit1_right = javelin_drawn_backward(
+            right_shoulder, right_wrist, 'right')
+        if crit1_left or crit1_right:
+            scoring['javelin_drawn_backward'] = 1
+            evaluation_frames[1].append(frame)
 
-            # Criterion 1: Javelin drawn backward during the last 5 strides
-            if javelin_drawn_backward(shoulder_positions, wrist_positions):
-                scoring['javelin_drawn_backward'] = 1
-                evaluation_frames[1].append(frame)
+        # Criterion 2: Pelvis rotation + javelin drawn back
+        crit2_left = pelvis_rotation_and_javelin_drawn(
+            left_hip, left_shoulder, left_wrist, 'left')
+        crit2_right = pelvis_rotation_and_javelin_drawn(
+            right_hip, right_shoulder, right_wrist, 'right')
+        if crit2_left or crit2_right:
+            scoring['pelvis_rotation_and_javelin_drawn'] = 1
+            evaluation_frames[2].append(frame)
 
-            # Criterion 2: Pelvis rotates inward, and javelin is fully drawn back
-            if pelvis_rotation_and_javelin_drawn(hip_positions, shoulder_positions, wrist_positions):
-                scoring['pelvis_rotation_and_javelin_drawn'] = 1
-                evaluation_frames[2].append(frame)
+        # Criterion 3: Impulse step executed
+        crit3_left = impulse_step_executed(
+            left_ankle, left_knee, left_hip, 'left')
+        crit3_right = impulse_step_executed(
+            right_ankle, right_knee, right_hip, 'right')
+        if crit3_left or crit3_right:
+            scoring['impulse_step_executed'] = 1
+            evaluation_frames[3].append(frame)
 
-            # Criterion 3: Execution of the impulse step
-            if impulse_step_executed(ankle_positions, knee_positions, hip_positions):
-                scoring['impulse_step_executed'] = 1
-                evaluation_frames[3].append(frame)
+        # Criterion 4: Blocking step executed
+        crit4_left = blocking_step_executed(left_ankle, left_hip, 'left')
+        crit4_right = blocking_step_executed(right_ankle, right_hip, 'right')
+        if crit4_left or crit4_right:
+            scoring['blocking_step_executed'] = 1
+            evaluation_frames[4].append(frame)
 
-            # Criterion 4: Execution of the blocking step
-            if blocking_step_executed(foot_positions, hip_positions):
-                scoring['blocking_step_executed'] = 1
-                evaluation_frames[4].append(frame)
-
-            # Criterion 5: Throw initiated through hips and torso
-            if throw_initiated(hip_positions, shoulder_positions, wrist_positions):
-                scoring['throw_initiated'] = 1
-                evaluation_frames[5].append(frame)
+        # Criterion 5: Throw initiated
+        crit5_left = throw_initiated(
+            left_hip, left_shoulder, left_wrist, 'left')
+        crit5_right = throw_initiated(
+            right_hip, right_shoulder, right_wrist, 'right')
+        if crit5_left or crit5_right:
+            scoring['throw_initiated'] = 1
+            evaluation_frames[5].append(frame)
 
     return scoring, evaluation_frames
