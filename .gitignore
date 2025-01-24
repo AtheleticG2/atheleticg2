@@ -1,7 +1,18 @@
+
 # video json
 *.mp4
 *.json
 # data/
+
+*.pyc
+
+*.log
+
+# video json
+*.mp4
+*.json
+# data/
+*.pyc
 
 *.pyc
 
