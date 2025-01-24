@@ -12,7 +12,9 @@ import subprocess
 from sprint_criteria_checks import evaluate_sprint_running, evaluate_sprint_start, get_player_coords
 from longjump_criteria_checks import evaluate_long_jump
 from highjump_criteria_checks import evaluate_high_jump
-
+from shotput_criteria_checks import evaluate_shot_put
+from discusthrow_criteria_check import evaluate_discus_throw
+ 
 
 # Streamlit App
 st.set_page_config("Athelete Assist", layout="wide")
@@ -42,7 +44,7 @@ st.markdown("""
 # # Sport Selection
 sport = st.sidebar.selectbox(
     "**Which sport would you like to analyze?**",
-    ("Sprint Starting Technique", "Sprint Running Technique", "Long Jump", "High Jump", "Shot Put", "Discus Throw"),
+    ("Sprint Starting Technique", "Sprint Running Technique", "Long Jump", "High Jump"),
 )
 
 st.write(f"**You selected:** {sport}")
@@ -144,4 +146,3 @@ if "results" in st.session_state:
             "Criteria": st.column_config.TextColumn(width='large'),
             "Score": st.column_config.NumberColumn(format="%d ⭐")
         }, use_container_width=True)
-
