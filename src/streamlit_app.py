@@ -11,7 +11,7 @@ import time
 from sprint_criteria_checks import evaluate_sprint_running, evaluate_sprint_start, get_player_coords
 from longjump_criteria_checks import evaluate_long_jump
 from highjump_criteria_checks import evaluate_high_jump
-from shortput_criteria_checks import evaluate_shot_put
+from shotput_criteria_checks import evaluate_shot_put
 from discusthrow_criteria_check import evaluate_discus_throw
 
 import streamlit as st
