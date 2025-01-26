@@ -89,8 +89,7 @@ def segment_video_into_phases(player_coords, swing_end_index, turn_end_index):
     return swing_phase_frames, turn_phase_frames, throw_phase_frames
 
 # ------------- criterion checks by phase --------------------
-def evaluate_swing_phase(swing_frames):
-
+def evaluate_swing_phase(swing_frames, pass_threshold=0.7):
     partial_scoring = {
         'intro_swing_behind': 0
     }
@@ -100,19 +99,18 @@ def evaluate_swing_phase(swing_frames):
 
     logger.debug(f"PHASE=Swing: Processing {len(swing_frames)} frames for Criterion 1.")
 
+    passing_frames = 0
+
     for idx, data in enumerate(swing_frames):
         frame = data.get('frame', idx) 
         kpts = data['keypoints']
 
-        #debug: which criterion
         logger.debug(f"PHASE=Swing Frame={frame}: Checking Criterion 1...")
 
-        #extract keypoints
         right_shoulder = get_keypoint(kpts, 6)
         right_hip = get_keypoint(kpts, 12)
         right_wrist = get_keypoint(kpts, 10)
 
-        #log extracted keypoints
         logger.debug(f"Frame {frame}: right_shoulder={right_shoulder}, right_hip={right_hip}, right_wrist={right_wrist}")
 
         #criterion 1: introductory swing behind
@@ -123,9 +121,10 @@ def evaluate_swing_phase(swing_frames):
             else:
                 logger.debug(f"Frame {frame}: Computed swing_angle={swing_angle_calc:.2f} degrees")
                 logger.debug(f"Frame {frame}: wrist_x={right_wrist[0]:.4f}, shoulder_x={right_shoulder[0]:.4f}")
-                #make sure the arm is swing behind based on angle and position
+                
+                #check if the swing angle and wrist position meet the criteria
                 if swing_angle_calc > 160 and right_wrist[0] < right_shoulder[0]:
-                    partial_scoring['intro_swing_behind'] = 1
+                    passing_frames += 1
                     partial_eval_frames[1].append(frame)
                     logger.debug(f"Frame {frame}: Criterion 1 passed.")
                 else:
@@ -133,70 +132,102 @@ def evaluate_swing_phase(swing_frames):
         else:
             logger.debug(f"Frame {frame}: Missing keypoints required for Criterion 1 evaluation.")
 
-    logger.debug(f"Final scoring for Swing phase: {partial_scoring}")
+    #calculate the percentage of passing frames
+    total_frames = len(swing_frames)
+    if total_frames == 0:
+        logger.debug("No frames to evaluate in Swing phase.")
+        return partial_scoring, partial_eval_frames
+
+    pass_percentage = passing_frames / total_frames
+    logger.debug(f"Swing Phase: {passing_frames} out of {total_frames} frames passed Criterion 1 (Pass Percentage: {pass_percentage:.2%})")
+
+    #determine if the pass percentage meets the threshold
+    if pass_percentage >= pass_threshold:
+        partial_scoring['intro_swing_behind'] = 1
+        logger.debug(f"Swing Phase: criterion 1 met with pass percentage {pass_percentage:.2%}.")
+    else:
+        logger.debug(f"Swing Phase: criterion 1 not met. Required: {pass_threshold*100}%, Achieved: {pass_percentage:.2%}.")
+
     return partial_scoring, partial_eval_frames
 
 
-def evaluate_turn_phase(turn_frames):
 
+def evaluate_turn_phase(turn_frames):
     partial_scoring = {
-        'jump_turn_initiated': 0,
-        'jump_turn_center_circle': 0
+        'jump_turn_initiated': 0,     
+        'jump_turn_center_circle': 1 
     }
     partial_eval_frames = {
-        2: [],
-        3: []
+        2: [], 
+        3: []   
     }
 
     logger.debug(f"PHASE=Turn: Processing {len(turn_frames)} frames for Criteria 2 & 3.")
 
-    #circle center check
+    #criterion 3 parameters
     circle_center_x = 0.42
     threshold_distance = 0.05
 
+    #flag tracking criterion 3
+    criterion_3_failed = False
+
     for idx, data in enumerate(turn_frames):
         frame = data.get('frame', idx + len(turn_frames)) 
-        kpts = data['keypoints']
+        jump_angle = data.get('jump_angle')       #jump_angle is available
+        mid_ankle_x = data.get('mid_ankle_x')   
+        kpts = data.get('keypoints', {})
 
-        #debugwhich criteria
-        logger.debug(f"PHASE=Turn Frame={frame}: Checking Criteria 2 & 3...")
+        logger.debug(f"PHASE=Turn Frame={frame}: checking Criteria 2 & 3...")
+        logger.debug(f"Frame {frame}: jump_angle={jump_angle}")
+        logger.debug(f"Frame {frame}: mid_ankle_x={mid_ankle_x}")
 
         right_hip = get_keypoint(kpts, 12)
         right_knee = get_keypoint(kpts, 14)
         right_ankle = get_keypoint(kpts, 16)
         left_ankle = get_keypoint(kpts, 15)
 
-        #compute angles debug only
-        jump_angle = compute_angle_3pts(right_hip, right_knee, right_ankle)
+        #jump angle
+        jump_angle_calc = compute_angle_3pts(right_hip, right_knee, right_ankle)
+        logger.debug(f"Frame {frame}: computed jump_angle={jump_angle_calc}")
 
-        #debug lines
-        logger.debug(f"Frame {frame}: jump_angle={jump_angle}")
-
-        #criterion 2: jump turn initiated from ball of foot
+        # --- criterion 2: jump turn initiated ---
         if right_ankle and right_knee and right_hip:
-            jump_angle_calc = compute_angle_3pts(right_hip, right_knee, right_ankle)
             if jump_angle_calc is None:
                 logger.debug(f"Frame {frame}: Missing keypoints for jump_angle calculation.")
             else:
-                logger.debug(f"Frame {frame}: jump_angle={jump_angle_calc}")
-                if jump_angle_calc > 80: #adjust when needed
+                if jump_angle_calc > 80: 
                     partial_scoring['jump_turn_initiated'] = 1
                     partial_eval_frames[2].append(frame)
+                    logger.debug(f"Frame {frame}: criterion 2 passed.")
                 else:
-                    logger.debug(f"Frame {frame}: Criterion 2 failed: jump_angle={jump_angle_calc}")
+                    logger.debug(f"Frame {frame}: criterion 2 failed: jump_angle={jump_angle_calc}")
+        else:
+            logger.debug(f"Frame {frame}: missing keypoints for criterion 2 evaluation.")
 
-        #criterion 3: jump turn near center of circle
+        # --- criterion 3: jump turn near Center of circle ---
         if right_ankle and left_ankle:
-            mid_ankle_x = (right_ankle[0] + left_ankle[0]) / 2
-            logger.debug(f"Frame {frame}: mid_ankle_x={mid_ankle_x}")
-            if abs(mid_ankle_x - circle_center_x) < threshold_distance:
-                logger.debug(f"Frame {frame}: Criterion 3 satisfied: mid_ankle_x={mid_ankle_x}")
-                partial_scoring['jump_turn_center_circle'] = 1
+            computed_mid_ankle_x = (right_ankle[0] + left_ankle[0]) / 2
+            logger.debug(f"Frame {frame}: computed mid_ankle_x={computed_mid_ankle_x}")
+
+            if abs(computed_mid_ankle_x - circle_center_x) < threshold_distance:
                 partial_eval_frames[3].append(frame)
+                logger.debug(f"Frame {frame}: criterion 3 satisfied: mid_ankle_x={computed_mid_ankle_x}")
             else:
-                logger.debug(f"Frame {frame}: Criterion 3 failed: mid_ankle_x={mid_ankle_x}")
+                criterion_3_failed = True
+                logger.debug(f"Frame {frame}: criterion 3 failed: mid_ankle_x={computed_mid_ankle_x}")
+        else:
+           
+            criterion_3_failed = True
+            logger.debug(f"Frame {frame}: missing keypoints for Criterion 3 evaluation.")
+
+    if criterion_3_failed:
+        partial_scoring['jump_turn_center_circle'] = 0
+        logger.debug("turn Phase: criterion 3 not met due to at least one failing frame.")
+    else:
+        logger.debug("Turn Phase: criterion 3 met. all frames satisfied the condition.")
 
     return partial_scoring, partial_eval_frames
+
 
 def evaluate_throw_phase(throw_frames):
     partial_scoring = {
@@ -236,7 +267,7 @@ def evaluate_throw_phase(throw_frames):
                 logger.debug(f"Frame {frame}: Missing keypoints for throw_angle calculation.")
             else:
                 logger.debug(f"Frame {frame}: throw_angle={throw_angle_calc}")
-                if throw_angle_calc > 45:  # Adjust threshold as needed
+                if throw_angle_calc > 45:
                     partial_scoring['throw_off_low_to_high'] = 1
                     partial_eval_frames[4].append(frame)
                 else:
@@ -254,7 +285,7 @@ def evaluate_throw_phase(throw_frames):
                 logger.debug(f"Frame {frame}: Missing keypoints for release_angle calculation.")
             else:
                 logger.debug(f"Frame {frame}: release_angle={release_angle_calc}")
-                if release_angle_calc > 30:  # Adjust threshold for wrist snap
+                if release_angle_calc > 30: 
                     partial_scoring['discus_release_via_wrist'] = 1
                     partial_eval_frames[5].append(frame)
                 else:

@@ -27,19 +27,18 @@ logger.addHandler(console_handler)
 # ------------- helper geometry functions --------------------
 
 def get_keypoint(kpts, idx):
-    """Retrieve keypoint by index."""
     if idx < len(kpts):
         return kpts[idx]
     return None
 
-def distance_2d(p1, p2):
-    """Calculate Euclidean distance between two 2D points."""
-    if p1 is None or p2 is None:
-        return None
-    return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+# def distance_2d(p1, p2):
+#     if p1 is None or p2 is None:
+#         return None
+#     return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+def distance_2d(point1, point2):
+    return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
 
 def compute_angle_3pts(a, b, c):
-    """Compute the angle (in degrees) formed at point b by points a, b, and c."""
     if a is None or b is None or c is None:
         return None
     ax, ay = a
@@ -62,7 +61,6 @@ def compute_angle_3pts(a, b, c):
         return None
 
 def shoulder_orientation(left_shoulder, right_shoulder):
-    """Calculate the orientation angle of the shoulders."""
     if left_shoulder is None or right_shoulder is None:
         return None
     dx = right_shoulder[0] - left_shoulder[0]
@@ -88,9 +86,6 @@ def detect_phase_transitions(player_coords):
     return preparation_end_index, transition_end_index
 
 def segment_video_into_phases(player_coords, preparation_end_index, transition_end_index):
-    """
-    Segment the video frames into different phases based on indices.
-    """
     preparation_phase_frames = player_coords[:preparation_end_index]
     transition_phase_frames = player_coords[preparation_end_index:transition_end_index]
     release_phase_frames = player_coords[transition_end_index:]
@@ -103,11 +98,6 @@ def segment_video_into_phases(player_coords, preparation_end_index, transition_e
 
 # ------------- criterion checks by phase --------------------
 def evaluate_preparation_phase(preparation_frames):
-    """
-    Evaluate criteria specific to the Preparation (Glide) phase.
-    Criterion 1:
-    - Glide phase initiated from a folded low leg, with back to the throwing direction
-    """
     partial_scoring = {
         'glide_phase_correct_form': 0
     }
@@ -155,8 +145,8 @@ def evaluate_preparation_phase(preparation_frames):
 
             #define thresholds
             if (right_knee_angle is not None and left_knee_angle is not None and orient_angle is not None):
-                if (right_knee_angle < 160 and left_knee_angle < 160 and
-                    (orient_angle > 90 or orient_angle < -90)):
+                if (right_knee_angle < 180 and left_knee_angle < 180 and
+                    (orient_angle > 70 or orient_angle < -70)):
                     partial_scoring['glide_phase_correct_form'] = 1
                     partial_eval_frames[1].append(frame)
                     logger.debug(f"Frame {frame}: Criterion 1 passed.")
@@ -226,7 +216,7 @@ def evaluate_transition_phase(transition_frames):
                          f"left_knee_angle={left_knee_angle:.2f} degrees")
 
             if (right_knee_angle is not None and left_knee_angle is not None):
-                if (right_knee_angle > 160 and left_knee_angle < 160):
+                if (right_knee_angle > 140 and left_knee_angle < 160):
                     partial_scoring['stiff_leg_put_down_butt_leg_folded'] = 1
                     partial_eval_frames[3].append(frame)
                     logger.debug(f"Frame {frame}: Criterion 3 passed.")
@@ -285,7 +275,7 @@ def evaluate_release_phase(release_frames):
                          f"right_elbow_angle={right_elbow_angle}, "
                          f"shoulder_to_hip_angle={shoulder_to_hip_angle}")
 
-            # Define thresholds based on criteria
+            #thresholds based on criteria
             if (left_elbow_angle is not None and right_elbow_angle is not None and
                 shoulder_to_hip_angle is not None):
 
@@ -334,7 +324,7 @@ def evaluate_release_phase(release_frames):
                 logger.debug(f"Frame {frame}: dist_wr_nose={dist_wr_nose_str}, "
                              f"arm_release_angle={arm_release_angle_str}")
 
-                if (dist_wr_nose < 100 and 30 <= arm_release_angle <= 60):
+                if (dist_wr_nose < 50 and 30 <= arm_release_angle <= 60):
                     partial_scoring['ball_release_properly'] = 1
                     partial_eval_frames[5].append(frame)
                     logger.debug(f"Frame {frame}: Criterion 5 passed.")
@@ -347,8 +337,8 @@ def evaluate_release_phase(release_frames):
 
     logger.debug(f"Final scoring for Release phase: {partial_scoring}")
     return partial_scoring, partial_eval_frames
-# ------------- main evaluation --------------------
 
+# ------------- main evaluation --------------------
 def evaluate_shot_put(player_coords):
     logger.info("Starting Shot Put evaluation.")
 

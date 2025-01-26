@@ -1,9 +1,5 @@
-matplotlib==3.7.3
 numpy==1.26.0
-opencv-contrib-python==4.10.0.84
-opencv-python-headless
+opencv-python-headless==4.10.0.84
 pandas==2.0.3
 streamlit==1.40.1
 ultralytics==8.3.58
-setuptools
-wheel

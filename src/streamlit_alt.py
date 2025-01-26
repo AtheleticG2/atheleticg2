@@ -44,7 +44,7 @@ st.markdown("""
 # # Sport Selection
 sport = st.sidebar.selectbox(
     "**Which sport would you like to analyze?**",
-    ("Sprint Starting Technique", "Sprint Running Technique", "Long Jump", "High Jump"),
+    ("Sprint Starting Technique", "Sprint Running Technique", "Long Jump", "High Jump", "Shot Put", "Discus Throw"),
 )
 
 st.write(f"**You selected:** {sport}")
