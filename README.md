@@ -81,9 +81,9 @@ streamlit run app.py
 6. Download the results report (optional)
 
 ## 📊 Performance Metrics
-- Pose estimation accuracy: 90%+ on benchmark datasets
+- Pose estimation accuracy: 90%+ on provided datasets
 - Processing speed: 20-30 FPS for real-time analysis
-- Cloud response time: ~2-5 seconds for video upload and processing
+- Cloud response time: ~5-8 minutes for video upload and processing
 
 ## 📋 Project Structure
 ```
