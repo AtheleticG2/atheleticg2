@@ -18,7 +18,7 @@ Athlete Assist is an AI-powered sports analysis system that uses advanced pose e
 - **Automated Scoring**: Evaluates performance based on sport-specific criteria
 - **Real-time Analysis**: Provides immediate feedback on athlete technique
 - **Multi-sport Support**: Comprehensive analysis across 7 different athletic events
-- **Cloud-hosted Web Interface**: Access the system from anywhere via Hugging Face or Google Cloud Run
+- **Cloud-hosted Web Interface**: Access the system from anywhere via Hugging Face, Google Cloud Run or a locally run Docker container
 - **SCRUM Workflow**: Developed using agile methodologies with the creator acting as Product Owner
 
 ## 🛠️ Technologies Used
