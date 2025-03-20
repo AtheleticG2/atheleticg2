@@ -85,22 +85,6 @@ streamlit run app.py
 - Processing speed: 20-30 FPS for real-time analysis
 - Cloud response time: ~5-8 minutes for video upload and processing
 
-## 📋 Project Structure
-```
-atheleticg2/
-├── models/                  # YOLOv11-Pose models
-├── src/                     # Core analysis logic
-│   ├── pose_detector.py     # Pose detection implementation
-│   ├── sport_analyzers/     # Sport-specific analysis modules
-│   └── utils/               # Utility functions
-├── app/                     # Streamlit application
-│   ├── pages/               # Multiple pages for the web app
-│   └── components/          # Reusable UI components
-├── Dockerfile               # For containerization
-├── requirements.txt         # Python dependencies
-├── app.py                   # Main Streamlit entry point
-└── README.md                # Project documentation
-```
 
 ## 👥 Team & Roles
 - Developed as a team project with SCRUM methodology
