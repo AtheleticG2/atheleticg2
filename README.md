@@ -98,14 +98,14 @@ streamlit run app.py
 ## 🔄 Future Improvements
 - [ ] Add support for additional sports
 - [ ] Implement user accounts for saving and tracking progress
-- [ ] Enhance visualization of biomechanical analysis
+- [ ] Enhance visualization of analysis
 - [ ] Develop mobile application for on-field use
 - [ ] Integrate with wearable devices for additional data points
-
-## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgements
 - YOLOv11-Pose developers for the pose estimation framework
 - The sports science community for biomechanical insights
 - Our advisors and mentors for guidance throughout the project
+
+## Detailed Solution Documentation
+[Athlete Assist functional analysis G2.pdf](https://github.com/user-attachments/files/19472854/Athlete.Assist.functional.analysis.G2.pdf)
